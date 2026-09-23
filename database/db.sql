@@ -14,3 +14,15 @@ CREATE TABLE produtos (
     validade DATE NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO produtos
+(nome, categoria, descricao, preco, quantidade, validade)
+VALUES
+('Arroz 5kg', 'Alimentos',
+ 'Arroz branco tipo 1', 25.90, 50, '2027-05-20'),
+
+('Feijão 1kg', 'Alimentos',
+ 'Feijão carioca', 8.50, 80, '2027-03-15'),
+
+('Leite 1L', 'Bebidas',
+ 'Leite integral', 5.49, 30, '2026-10-10');
