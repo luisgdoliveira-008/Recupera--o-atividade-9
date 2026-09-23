@@ -4,7 +4,7 @@ COLLATE utf8mb4_unicode_ci;
 
 USE mercado_estoque;
 
-CREATE TABLE produtos (
+CREATE TABLE IF NOT EXISTS produtos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     categoria VARCHAR(100) NOT NULL,
@@ -17,12 +17,53 @@ CREATE TABLE produtos (
 
 INSERT INTO produtos
 (nome, categoria, descricao, preco, quantidade, validade)
-VALUES
-('Arroz 5kg', 'Alimentos',
- 'Arroz branco tipo 1', 25.90, 50, '2027-05-20'),
 
-('Feijão 1kg', 'Alimentos',
- 'Feijão carioca', 8.50, 80, '2027-03-15'),
+SELECT
+'Arroz 5kg',
+'Alimentos',
+'Arroz branco tipo 1',
+25.90,
+50,
+'2027-05-20'
 
-('Leite 1L', 'Bebidas',
- 'Leite integral', 5.49, 30, '2026-10-10');
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM produtos
+    WHERE nome = 'Arroz 5kg'
+);
+
+
+INSERT INTO produtos
+(nome, categoria, descricao, preco, quantidade, validade)
+
+SELECT
+'Feijão 1kg',
+'Alimentos',
+'Feijão carioca',
+8.50,
+80,
+'2027-03-15'
+
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM produtos
+    WHERE nome = 'Feijão 1kg'
+);
+
+
+INSERT INTO produtos
+(nome, categoria, descricao, preco, quantidade, validade)
+
+SELECT
+'Leite 1L',
+'Bebidas',
+'Leite integral',
+5.49,
+30,
+'2026-10-10'
+
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM produtos
+    WHERE nome = 'Leite 1L'
+);

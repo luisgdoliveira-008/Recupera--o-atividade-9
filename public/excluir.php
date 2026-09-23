@@ -2,32 +2,44 @@
 
 require_once "../config/database.php";
 
-$id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
-if (!$id) {
+    header("Location: index.php");
+    exit;
+}
+
+$id = filter_input(
+    INPUT_POST,
+    "id",
+    FILTER_VALIDATE_INT
+);
+
+if (
+    $id === false ||
+    $id === null ||
+    $id <= 0
+) {
+
     die("Produto inválido.");
 }
 
 try {
 
-    $sql = "DELETE FROM produtos WHERE id = :id";
-
-    $stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare(
+        "DELETE FROM produtos WHERE id = :id"
+    );
 
     $stmt->execute([
         ":id" => $id
     ]);
 
-    header("Location: index.php");
+    header(
+        "Location: index.php?sucesso=excluido"
+    );
+
     exit;
 
 } catch (PDOException $e) {
 
     die("Não foi possível excluir o produto.");
 }
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    ":id" => $id
-]);

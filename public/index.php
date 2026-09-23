@@ -3,17 +3,30 @@
 require_once "../config/database.php";
 
 try {
-
-    $sql = "SELECT * FROM produtos ORDER BY id DESC";
-
-    $stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare("SELECT * FROM produtos ORDER BY id DESC");
     $stmt->execute();
 
     $produtos = $stmt->fetchAll();
 
 } catch (PDOException $e) {
-
     die("Erro ao carregar os produtos.");
+}
+
+$mensagem = "";
+
+switch ($_GET["sucesso"] ?? "") {
+
+    case "cadastrado":
+        $mensagem = "Produto cadastrado com sucesso.";
+        break;
+
+    case "editado":
+        $mensagem = "Produto atualizado com sucesso.";
+        break;
+
+    case "excluido":
+        $mensagem = "Produto excluído com sucesso.";
+        break;
 }
 
 ?>
@@ -24,10 +37,11 @@ try {
 <head>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Gestão de Estoque</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
 
 </head>
 
@@ -37,80 +51,133 @@ try {
 
     <h1>Gestão de Estoque</h1>
 
+    <?php if ($mensagem !== ""): ?>
+
+        <div class="sucesso">
+            <?= htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8') ?>
+        </div>
+
+    <?php endif; ?>
+
     <a class="botao" href="cadastrar.php">
         + Cadastrar Produto
     </a>
 
-    <table>
+    <?php if (count($produtos) === 0): ?>
 
-        <thead>
+        <p>Nenhum produto cadastrado.</p>
 
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Categoria</th>
-                <th>Preço</th>
-                <th>Quantidade</th>
-                <th>Validade</th>
-                <th>Ações</th>
-            </tr>
+    <?php else: ?>
 
-        </thead>
+        <div class="tabela-responsiva">
 
-        <tbody>
+            <table>
 
-        <?php foreach ($produtos as $produto): ?>
+                <thead>
 
-            <tr>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Preço</th>
+                    <th>Quantidade</th>
+                    <th>Validade</th>
+                    <th>Ações</th>
+                </tr>
 
-                <td>
-                    <?= htmlspecialchars($produto["id"]) ?>
-                </td>
+                </thead>
 
-                <td>
-                    <?= htmlspecialchars($produto["nome"]) ?>
-                </td>
+                <tbody>
 
-                <td>
-                    <?= htmlspecialchars($produto["categoria"]) ?>
-                </td>
+                <?php foreach ($produtos as $produto): ?>
 
-                <td>
-                    R$ <?= number_format($produto["preco"], 2, ",", ".") ?>
-                </td>
+                    <tr>
 
-                <td>
-                    <?= htmlspecialchars($produto["quantidade"]) ?>
-                </td>
+                        <td>
+                            <?= (int)$produto["id"] ?>
+                        </td>
 
-                <td>
-                    <?= date("d/m/Y", strtotime($produto["validade"])) ?>
-                </td>
+                        <td>
+                            <?= htmlspecialchars(
+                                $produto["nome"],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </td>
 
-                <td>
+                        <td>
+                            <?= htmlspecialchars(
+                                $produto["categoria"],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </td>
 
-                    <a href="visualizar.php?id=<?= $produto["id"] ?>">
-                        Visualizar
-                    </a>
+                        <td>
+                            R$ <?= number_format(
+                                (float)$produto["preco"],
+                                2,
+                                ",",
+                                "."
+                            ) ?>
+                        </td>
 
-                    <a href="editar.php?id=<?= $produto["id"] ?>">
-                        Editar
-                    </a>
+                        <td>
+                            <?= (int)$produto["quantidade"] ?>
+                        </td>
 
-                    <a href="excluir.php?id=<?= $produto["id"] ?>"
-                       onclick="return confirm('Deseja realmente excluir este produto?');">
-                        Excluir
-                    </a>
+                        <td>
+                            <?= date(
+                                "d/m/Y",
+                                strtotime($produto["validade"])
+                            ) ?>
+                        </td>
 
-                </td>
+                        <td class="acoes">
 
-            </tr>
+                            <a href="visualizar.php?id=<?= (int)$produto["id"] ?>">
+                                Visualizar
+                            </a>
 
-        <?php endforeach; ?>
+                            <a href="editar.php?id=<?= (int)$produto["id"] ?>">
+                                Editar
+                            </a>
 
-        </tbody>
+                            <form
+                                method="POST"
+                                action="excluir.php"
+                                class="form-excluir"
+                                onsubmit="return confirm('Deseja realmente excluir este produto?');"
+                            >
 
-    </table>
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?= (int)$produto["id"] ?>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="link-excluir"
+                                >
+                                    Excluir
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                <?php endforeach; ?>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    <?php endif; ?>
 
 </div>
 

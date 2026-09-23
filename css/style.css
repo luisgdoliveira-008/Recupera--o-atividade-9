@@ -7,6 +7,7 @@ body {
     background: #f2f4f7;
     margin: 0;
     padding: 30px;
+    color: #212529;
 }
 
 .container {
@@ -15,10 +16,11 @@ body {
     background: white;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
+    margin-top: 0;
     margin-bottom: 25px;
 }
 
@@ -30,14 +32,17 @@ form {
 
 input,
 textarea {
+    width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     margin-bottom: 12px;
+    font-size: 15px;
 }
 
 textarea {
     min-height: 100px;
+    resize: vertical;
 }
 
 button,
@@ -53,6 +58,11 @@ button,
     margin-bottom: 20px;
 }
 
+button:hover,
+.botao:hover {
+    opacity: 0.9;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -63,6 +73,7 @@ td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
     text-align: left;
+    vertical-align: middle;
 }
 
 th {
@@ -80,4 +91,45 @@ a {
     padding: 12px;
     margin-bottom: 20px;
     border-radius: 5px;
+}
+
+.sucesso {
+    background: #d1e7dd;
+    color: #0f5132;
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.acoes {
+    white-space: nowrap;
+}
+
+.form-excluir {
+    display: inline;
+}
+
+.link-excluir {
+    background: none;
+    color: #dc3545;
+    padding: 0;
+    margin: 0;
+    border: none;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.tabela-responsiva {
+    overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 20px;
+    }
 }

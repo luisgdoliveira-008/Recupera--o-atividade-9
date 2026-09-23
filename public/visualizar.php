@@ -2,23 +2,40 @@
 
 require_once "../config/database.php";
 
-$id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
+$id = filter_input(
+    INPUT_GET,
+    "id",
+    FILTER_VALIDATE_INT
+);
 
-if (!$id) {
+if (
+    $id === false ||
+    $id === null ||
+    $id <= 0
+) {
+
     die("Produto inválido.");
 }
 
-$stmt = $pdo->prepare(
-    "SELECT * FROM produtos WHERE id = :id"
-);
+try {
 
-$stmt->execute([
-    ":id" => $id
-]);
+    $stmt = $pdo->prepare(
+        "SELECT * FROM produtos WHERE id = :id"
+    );
 
-$produto = $stmt->fetch();
+    $stmt->execute([
+        ":id" => $id
+    ]);
+
+    $produto = $stmt->fetch();
+
+} catch (PDOException $e) {
+
+    die("Erro ao consultar o produto.");
+}
 
 if (!$produto) {
+
     die("Produto não encontrado.");
 }
 
@@ -30,10 +47,11 @@ if (!$produto) {
 <head>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Visualizar Produto</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
 
 </head>
 
@@ -41,34 +59,64 @@ if (!$produto) {
 
 <div class="container">
 
-    <h1><?= htmlspecialchars($produto["nome"]) ?></h1>
+    <h1>
+        <?= htmlspecialchars(
+            $produto["nome"],
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+    </h1>
 
     <p>
         <strong>Categoria:</strong>
-        <?= htmlspecialchars($produto["categoria"]) ?>
+
+        <?= htmlspecialchars(
+            $produto["categoria"],
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
     </p>
 
     <p>
         <strong>Descrição:</strong>
-        <?= htmlspecialchars($produto["descricao"]) ?>
+
+        <?= htmlspecialchars(
+            $produto["descricao"] ?? "",
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
     </p>
 
     <p>
         <strong>Preço:</strong>
-        R$ <?= number_format($produto["preco"], 2, ",", ".") ?>
+
+        R$ <?= number_format(
+            (float)$produto["preco"],
+            2,
+            ",",
+            "."
+        ) ?>
     </p>
 
     <p>
         <strong>Quantidade:</strong>
-        <?= htmlspecialchars($produto["quantidade"]) ?>
+
+        <?= (int)$produto["quantidade"] ?>
     </p>
 
     <p>
         <strong>Validade:</strong>
-        <?= date("d/m/Y", strtotime($produto["validade"])) ?>
+
+        <?= date(
+            "d/m/Y",
+            strtotime($produto["validade"])
+        ) ?>
     </p>
 
-    <a href="editar.php?id=<?= $produto["id"] ?>">
+    <a
+        class="botao"
+        href="editar.php?id=<?= (int)$produto["id"] ?>"
+    >
         Editar
     </a>
 
@@ -79,5 +127,4 @@ if (!$produto) {
 </div>
 
 </body>
-
 </html>

@@ -2,18 +2,40 @@
 
 require_once "../config/database.php";
 
-$id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
+$id = filter_input(
+    INPUT_GET,
+    "id",
+    FILTER_VALIDATE_INT
+);
 
-if (!$id) {
+if (
+    $id === false ||
+    $id === null ||
+    $id <= 0
+) {
+
     die("Produto inválido.");
 }
 
-$stmt = $pdo->prepare("SELECT * FROM produtos WHERE id = :id");
-$stmt->execute([":id" => $id]);
+try {
 
-$produto = $stmt->fetch();
+    $stmt = $pdo->prepare(
+        "SELECT * FROM produtos WHERE id = :id"
+    );
+
+    $stmt->execute([
+        ":id" => $id
+    ]);
+
+    $produto = $stmt->fetch();
+
+} catch (PDOException $e) {
+
+    die("Erro ao consultar o produto.");
+}
 
 if (!$produto) {
+
     die("Produto não encontrado.");
 }
 
@@ -24,61 +46,97 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $nome = trim($_POST["nome"] ?? "");
     $categoria = trim($_POST["categoria"] ?? "");
     $descricao = trim($_POST["descricao"] ?? "");
-    $preco = $_POST["preco"] ?? "";
-    $quantidade = $_POST["quantidade"] ?? "";
-    $validade = $_POST["validade"] ?? "";
+    $preco = trim($_POST["preco"] ?? "");
+    $quantidade = trim($_POST["quantidade"] ?? "");
+    $validade = trim($_POST["validade"] ?? "");
 
     if (
-        empty($nome) ||
-        empty($categoria) ||
+        $nome === "" ||
+        $categoria === "" ||
         $preco === "" ||
         $quantidade === "" ||
-        empty($validade)
+        $validade === ""
     ) {
 
         $erro = "Preencha todos os campos obrigatórios.";
 
-    } elseif (!is_numeric($preco) || $preco < 0) {
+    } elseif (mb_strlen($nome) > 150) {
 
-        $erro = "Preço inválido.";
+        $erro = "O nome deve ter no máximo 150 caracteres.";
 
-    } elseif (!filter_var($quantidade, FILTER_VALIDATE_INT) || $quantidade < 0) {
+    } elseif (mb_strlen($categoria) > 100) {
 
-        $erro = "Quantidade inválida.";
+        $erro = "A categoria deve ter no máximo 100 caracteres.";
+
+    } elseif (!is_numeric($preco) || (float)$preco < 0) {
+
+        $erro = "Informe um preço válido.";
+
+    } elseif (
+        filter_var($quantidade, FILTER_VALIDATE_INT) === false ||
+        (int)$quantidade < 0
+    ) {
+
+        $erro = "Informe uma quantidade válida.";
 
     } else {
 
-        try {
+        $dataValida = DateTime::createFromFormat(
+            'Y-m-d',
+            $validade
+        );
 
-            $sql = "UPDATE produtos SET
-                    nome = :nome,
-                    categoria = :categoria,
-                    descricao = :descricao,
-                    preco = :preco,
-                    quantidade = :quantidade,
-                    validade = :validade
-                    WHERE id = :id";
+        if (
+            !$dataValida ||
+            $dataValida->format('Y-m-d') !== $validade
+        ) {
 
-            $stmt = $pdo->prepare($sql);
+            $erro = "Informe uma data de validade válida.";
 
-            $stmt->execute([
-                ":nome" => $nome,
-                ":categoria" => $categoria,
-                ":descricao" => $descricao,
-                ":preco" => $preco,
-                ":quantidade" => $quantidade,
-                ":validade" => $validade,
-                ":id" => $id
-            ]);
+        } else {
 
-            header("Location: index.php");
-            exit;
+            try {
 
-        } catch (PDOException $e) {
+                $sql = "UPDATE produtos SET
+                            nome = :nome,
+                            categoria = :categoria,
+                            descricao = :descricao,
+                            preco = :preco,
+                            quantidade = :quantidade,
+                            validade = :validade
+                        WHERE id = :id";
 
-            $erro = "Erro ao atualizar o produto.";
+                $stmt = $pdo->prepare($sql);
+
+                $stmt->execute([
+                    ":nome" => $nome,
+                    ":categoria" => $categoria,
+                    ":descricao" => $descricao,
+                    ":preco" => (float)$preco,
+                    ":quantidade" => (int)$quantidade,
+                    ":validade" => $validade,
+                    ":id" => $id
+                ]);
+
+                header(
+                    "Location: index.php?sucesso=editado"
+                );
+
+                exit;
+
+            } catch (PDOException $e) {
+
+                $erro = "Erro ao atualizar o produto.";
+            }
         }
     }
+
+    $produto["nome"] = $nome;
+    $produto["categoria"] = $categoria;
+    $produto["descricao"] = $descricao;
+    $produto["preco"] = $preco;
+    $produto["quantidade"] = $quantidade;
+    $produto["validade"] = $validade;
 }
 
 ?>
@@ -89,9 +147,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Editar Produto</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
 
 </head>
 
@@ -101,65 +161,118 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <h1>Editar Produto</h1>
 
-    <?php if ($erro): ?>
+    <?php if ($erro !== ""): ?>
 
         <div class="erro">
-            <?= htmlspecialchars($erro) ?>
+            <?= htmlspecialchars(
+                $erro,
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>
         </div>
 
     <?php endif; ?>
 
-    <form method="POST">
+    <form
+        method="POST"
+        action="?id=<?= (int)$id ?>"
+    >
 
-        <label>Nome:</label>
+        <label for="nome">
+            Nome:
+        </label>
 
         <input
             type="text"
+            id="nome"
             name="nome"
-            value="<?= htmlspecialchars($produto["nome"]) ?>"
+            maxlength="150"
+            value="<?= htmlspecialchars(
+                $produto["nome"],
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
             required
         >
 
-        <label>Categoria:</label>
+        <label for="categoria">
+            Categoria:
+        </label>
 
         <input
             type="text"
+            id="categoria"
             name="categoria"
-            value="<?= htmlspecialchars($produto["categoria"]) ?>"
+            maxlength="100"
+            value="<?= htmlspecialchars(
+                $produto["categoria"],
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
             required
         >
 
-        <label>Descrição:</label>
+        <label for="descricao">
+            Descrição:
+        </label>
 
-        <textarea name="descricao"><?= htmlspecialchars($produto["descricao"]) ?></textarea>
+        <textarea
+            id="descricao"
+            name="descricao"
+        ><?= htmlspecialchars(
+            $produto["descricao"] ?? "",
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?></textarea>
 
-        <label>Preço:</label>
+        <label for="preco">
+            Preço:
+        </label>
 
         <input
             type="number"
+            id="preco"
             name="preco"
             step="0.01"
             min="0"
-            value="<?= htmlspecialchars($produto["preco"]) ?>"
+            value="<?= htmlspecialchars(
+                $produto["preco"],
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
             required
         >
 
-        <label>Quantidade:</label>
+        <label for="quantidade">
+            Quantidade:
+        </label>
 
         <input
             type="number"
+            id="quantidade"
             name="quantidade"
             min="0"
-            value="<?= htmlspecialchars($produto["quantidade"]) ?>"
+            value="<?= htmlspecialchars(
+                $produto["quantidade"],
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
             required
         >
 
-        <label>Validade:</label>
+        <label for="validade">
+            Data de validade:
+        </label>
 
         <input
             type="date"
+            id="validade"
             name="validade"
-            value="<?= htmlspecialchars($produto["validade"]) ?>"
+            value="<?= htmlspecialchars(
+                $produto["validade"],
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
             required
         >
 
@@ -169,10 +282,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </form>
 
-    <a href="index.php">Voltar</a>
+    <a href="index.php">
+        Voltar
+    </a>
 
 </div>
 
 </body>
-
 </html>
